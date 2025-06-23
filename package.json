@@ -1,6 +1,6 @@
 {
     "name": "@elmy-org/gift-pegjs",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Parser of GIFT question format based on PEG.js",
     "main": "pegjs-gift.js",
     "types": "index.d.ts",
