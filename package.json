@@ -1,5 +1,5 @@
 {
-    "name": "gift-pegjs",
+    "name": "@elmy-org/gift-pegjs",
     "version": "1.0.2",
     "description": "Parser of GIFT question format based on PEG.js",
     "main": "pegjs-gift.js",
@@ -24,11 +24,11 @@
         "build": "pegjs --format globals --export-var giftParser -o lib/gift-parser-globals.js GIFT.pegjs && cp lib/gift-parser-globals.js pegjs-gift-globals.js && pegjs -o lib/gift-parser.js GIFT.pegjs && cp lib/gift-parser.js pegjs-gift.js && bash makeHTML.sh && cp GIFT.pegjs docs/editor/lib/",
         "test": "jest --colors"
     },
-    "repository": "github:fuhrmanator/GIFT-grammar-PEG.js",
-    "author": "Christopher Fuhrman",
+    "repository": "github:elmy-org/GIFT-grammar-PEG.js",
+    "author": "Saiid El Hajj Chehade",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/fuhrmanator/GIFT-grammar-PEG.js/issues"
+        "url": "https://github.com/elmy-org/GIFT-grammar-PEG.js/issues"
     },
-    "homepage": "https://fuhrmanator.github.io/GIFT-grammar-PEG.js/"
+    "homepage": "https://elmy-org.github.io/GIFT-grammar-PEG.js/"
 }

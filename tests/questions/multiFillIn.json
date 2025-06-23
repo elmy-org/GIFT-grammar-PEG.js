@@ -41,7 +41,7 @@
         "tags": null
     },
     {
-        "type": "Cloze",
+        "type": "MFI",
         "title": null,
         "stem": {
             "format": "moodle",

@@ -180,7 +180,7 @@
             stem = stem.reduce((a,b) => a + b);
             
             var question = {
-              type: "Cloze",
+              type: "MFI",
               title: title,
               stem: { format: getLastQuestionTextFormat(), text: stem.trim() },
               answers: answers.length > 1 ? answers: answers[0],
