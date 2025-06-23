@@ -87,21 +87,7 @@
 }
 
 GIFTQuestions
-  = questions:(Category / Description / Question)+ _ __ { return questions; }
-
-Category "Category"
-  = ResetIdsTags __ '$' 'CATEGORY:' _ cat:CategoryText QuestionSeparator {return {type:"Category", title:cat}}
-
-Description "Description"
-  = ResetIdsTags __
-    TagComment*
-    title:QuestionTitle? _
-    text:QuestionStem
-    QuestionSeparator
-    { var question = {id: questionId, tags: questionTags, type:"Description", title:title, stem:text, hasEmbeddedAnswers:false};
-      resetLastQuestionTextFormat(); 
-      questionId = null; questionTags = null;
-      return question }
+  = questions:(Category / Description / StandaloneQuestion / EmbeddedQuestion )+ _ __ { return questions; }
 
 Question
   = ResetIdsTags __
@@ -127,6 +113,205 @@ Question
     resetLastQuestionTextFormat();
     return question;
   }
+  
+// Standalone questions (no embedded answers)
+StandaloneQuestion
+  = MatchingQuestion
+  / TrueFalseQuestion
+  / EssayQuestion
+  / ShortAnswerQuestion
+  / NumericalQuestion
+  / Question
+
+// Embedded questions (with embedded answers)
+EmbeddedQuestion
+  = ResetIdsTags __
+    TagComment*
+    title:QuestionTitle? _
+    parts:QuestionParts
+    QuestionSeparator
+  {
+    // Compose the stem and collect answers
+    let stem = [];
+    let answers = [];
+    let answerIndex = -1;
+    for (const part of parts) {
+      if (part.type === "stem") {
+        let spaceBefore = " ";
+      	if (stem.length == 0 || stem[stem.length -1 ]==" ")spaceBefore= "";
+        stem.push(spaceBefore + part.text + " ");
+      } else {
+        stem.push("__" + "(" + (answers.length + 1).toString() + ")" + "__");
+        answers.push(part);
+        answerIndex = answers.length;
+      }
+    }
+    
+    if (answers.length == 1) stem[answerIndex] = "______";
+    
+    stem = stem.reduce((a,b) => a + b);
+    
+    var question = {
+      type: "Cloze",
+      title: title,
+      stem: { format: getLastQuestionTextFormat(), text: stem.trim() },
+      answers: answers.length > 1 ? answers: answers[0],
+      hasEmbeddedAnswers: answers.length > 0
+    };
+    resetLastQuestionTextFormat();
+    return question;
+  }
+
+MatchingQuestion
+  = ResetIdsTags __
+    TagComment*
+    title:QuestionTitle? _
+    stem:QuestionStem _
+    '{' _ ma:MatchingAnswers _ '}' _
+    QuestionSeparator
+  {
+    var question = {
+      type: "Matching",
+      title: title,
+      stem: stem,
+      matchPairs: ma.matchPairs,
+      globalFeedback: ma.globalFeedback,
+      hasEmbeddedAnswers: false,
+      id: questionId,
+      tags: questionTags
+    };
+    resetLastQuestionTextFormat();
+    questionId = null; questionTags = null;
+    return question;
+  }
+
+TrueFalseQuestion
+  = ResetIdsTags __
+    TagComment*
+    title:QuestionTitle? _
+    stem:QuestionStem _
+    '{' _ tf:TrueFalseAnswer _ '}' _
+    QuestionSeparator
+  {
+    var question = {
+      type: "TF",
+      title: title,
+      stem: stem,
+      isTrue: tf.isTrue,
+      trueFeedback: tf.feedback[0],
+      falseFeedback: tf.feedback[1],
+      globalFeedback: tf.globalFeedback,
+      hasEmbeddedAnswers: false,
+      id: questionId,
+      tags: questionTags
+    };
+    resetLastQuestionTextFormat();
+    questionId = null; questionTags = null;
+    return question;
+  }
+
+EssayQuestion
+  = ResetIdsTags __
+    TagComment*
+    title:QuestionTitle? _
+    stem:QuestionStem _
+    '{' _ ea:EssayAnswer _ '}' _
+    QuestionSeparator
+  {
+    var question = {
+      type: "Essay",
+      title: title,
+      stem: stem,
+      globalFeedback: ea.globalFeedback,
+      hasEmbeddedAnswers: false,
+      id: questionId,
+      tags: questionTags
+    };
+    resetLastQuestionTextFormat();
+    questionId = null; questionTags = null;
+    return question;
+  }
+
+ShortAnswerQuestion
+  = ResetIdsTags __
+    TagComment*
+    title:QuestionTitle? _
+    stem:QuestionStem _
+    '{' _ sa:SingleCorrectShortAnswer _ '}' _
+    QuestionSeparator
+  {
+    var question = {
+      type: "Short",
+      title: title,
+      stem: stem,
+      choices: sa.choices,
+      globalFeedback: sa.globalFeedback,
+      hasEmbeddedAnswers: false,
+      id: questionId,
+      tags: questionTags
+    };
+    resetLastQuestionTextFormat();
+    questionId = null; questionTags = null;
+    return question;
+  }
+
+NumericalQuestion
+  = ResetIdsTags __
+    TagComment*
+    title:QuestionTitle? _
+    stem:QuestionStem _
+    '{' _ na:NumericalAnswerType _ '}' _
+    QuestionSeparator
+  {
+    var question = {
+      type: "Numerical",
+      title: title,
+      stem: stem,
+      choices: na.choices,
+      globalFeedback: na.globalFeedback,
+      hasEmbeddedAnswers: false,
+      id: questionId,
+      tags: questionTags
+    };
+    resetLastQuestionTextFormat();
+    questionId = null; questionTags = null;
+    return question;
+  }
+
+Category "Category"
+  = ResetIdsTags __ '$' 'CATEGORY:' _ cat:CategoryText QuestionSeparator {return {type:"Category", title:cat}}
+
+Description "Description"
+  = ResetIdsTags __
+    TagComment*
+    title:QuestionTitle? _
+    text:QuestionStem
+    QuestionSeparator
+    { var question = {id: questionId, tags: questionTags, type:"Description", title:title, stem:text, hasEmbeddedAnswers:false};
+      resetLastQuestionTextFormat(); 
+      questionId = null; questionTags = null;
+      return question }
+
+QuestionParts
+  = head:QuestionStem tail:(_ EmbeddedAnswer QuestionStem)* last:(_ EmbeddedAnswer)? {
+      head.type = "stem"; // add type to head
+      let result = [head];
+      for (const [_, answer, stem] of tail) {
+        stem.type = "stem"; // add type to stem
+        result.push(answer, stem);
+      }
+      if (last) {
+        // last is [_ , answer]
+        result.push(last[1]);
+      }
+      return result;
+    }
+
+// QuestionStemPart
+//   = RichText { return $.text; } // Use the text from RichText
+
+EmbeddedAnswer
+  = '{' _ choices:MCAnswers _ '}' { return choices; }
 
 MatchingAnswers "{= match1 -> Match1\n...}"
   = matchPairs:Matches _ globalFeedback:GlobalFeedback? _
@@ -267,8 +452,8 @@ QuestionStem "Question stem"
       return stem }
 
 QuestionSeparator "(blank lines separator)"
-  = BlankLines  
-    / EndOfLine? EndOfFile
+  = Space* (BlankLines  
+    / EndOfLine? EndOfFile)
 
 BlankLines "(blank lines)"
   = EndOfLine BlankLine+

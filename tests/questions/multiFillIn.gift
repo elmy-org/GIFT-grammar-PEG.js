@@ -1,0 +1,11 @@
+//-----------------------------------------//
+// Examples from the documentation.
+//-----------------------------------------//
+
+// ===Multiple Choice===
+
+Who's buried in Grant's tomb? {~Grant ~Jefferson =no one}
+
+// ===Multiple Fill-in-the-blank===
+
+In {~Grant ~Jefferson =no one} tomb, no one is buried. Yet, we can say that {=no one} is buried in {~Grant ~Jefferson =no one} tomb.
