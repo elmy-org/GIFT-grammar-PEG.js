@@ -521,7 +521,16 @@ Sign
   = [+-]
 
 GlobalFeedback
-    = '####' _ rt:RichText _ {return rt;}
+    = '####' _? rt:GlobalFeedbackText {return rt;}
+
+GlobalFeedbackText "(global feedback text)"
+  = format:Format? txt:GlobalFeedbackChar* { return formattedText(format || 'markdown', txt.length > 0 ? txt : ['']) }
+
+GlobalFeedbackChar "(global feedback character)"
+  = EscapeSequence / GlobalFeedbackUnescapedChar
+
+GlobalFeedbackUnescapedChar "(global feedback unescaped character)"
+  = !(EscapeSequence / '}') . {return text()}
 
 _ "(single line whitespace)"
   = (Space / EndOfLine !BlankLine)*
